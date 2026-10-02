@@ -1,10 +1,10 @@
 # MCP server and Inspector guide
 
-The `math-mcp` binary exposes the calculator as one Model Context Protocol tool
+The `math-mcp` binary exposes two Model Context Protocol tools
 over the local standard-input/standard-output transport. It does not open a
 network port, authenticate users, access notes, or read and write files.
 
-## Tool contract
+## Scalar calculation contract
 
 Tool name: `calculate`
 
@@ -38,6 +38,38 @@ Nullable output fields use explicit `anyOf` branches with one JSON Schema type
 per branch. This avoids array-valued `type` declarations that are valid JSON
 Schema but are rejected or weakened by some model-provider schema adapters.
 
+## Statistics contract
+
+Tool name: `statistics`
+
+Input:
+
+```json
+{"numbers":[12,15,9]}
+```
+
+Successful structured output:
+
+```json
+{
+  "schema_version": 1,
+  "ok": true,
+  "count": 3,
+  "sum": 36.0,
+  "mean": 12.0,
+  "median": 12.0,
+  "sample_standard_deviation": 3.0,
+  "min": 9.0,
+  "max": 15.0
+}
+```
+
+The standard deviation is the sample statistic with Bessel's `n-1` correction.
+The tool accepts 2 to 10,000 finite JSON numbers. It uses a compensated sum and
+rejects empty or singleton datasets, larger datasets, non-finite inputs, and
+non-finite results with stable error codes and correction hints. Unknown input
+fields and non-numeric array elements are rejected as MCP parameter errors.
+
 ## Test with MCP Inspector
 
 The current Inspector requires Node.js 22.19.0 or newer. Confirm the local
@@ -57,6 +89,8 @@ the Inspector interface opens:
 4. Run the tool and confirm that the result is `2.5` with `ok: true`.
 5. Try `(2 + 3))` and confirm that the tool reports
    `UNBALANCED_PARENTHESES` with `isError: true`.
+6. Select `statistics`, enter `[12, 15, 9]` in its `numbers` field, and confirm
+   the response matches the statistics example above.
 
 To avoid compiling every time, build once and point Inspector at the binary:
 
@@ -73,8 +107,9 @@ the tool; normal local process and account permissions are the security boundary
 ## Automated verification
 
 `tests/mcp_server.rs` starts the real binary and exercises the MCP lifecycle over
-stdio. It verifies initialization, tool discovery, the published schemas, a
-successful calculation, a stable calculation error, and malformed parameters:
+stdio. It verifies initialization, both tools and their published schemas,
+successful and rejected calculations, statistics over varied datasets, the
+maximum dataset boundary, every statistics error class, and malformed inputs:
 
 ```sh
 cargo test --locked --all-features --test mcp_server

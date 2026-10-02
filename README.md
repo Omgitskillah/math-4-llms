@@ -24,9 +24,10 @@ The process exits nonzero for errors.
 
 ## Use the MCP server
 
-The optional `mcp` feature provides a local stdio server with one tool,
-`calculate`. It publishes JSON input and output schemas and preserves the
-same versioned responses and stable calculation error codes as the library.
+The optional `mcp` feature provides a local stdio server with two tools:
+`calculate` evaluates strict scalar expressions, while `statistics` summarizes
+numeric datasets. Both publish JSON input and output schemas and return
+versioned structured responses.
 
 ```sh
 cargo run --locked --features mcp --bin math-mcp
@@ -39,11 +40,12 @@ than typing into it interactively. To inspect it with the official MCP Inspector
 npx @modelcontextprotocol/inspector cargo run -- --locked --features mcp --bin math-mcp
 ```
 
-In Inspector, open **Tools**, select `calculate`, enter an expression such
-as `(1 + 2 + 3 + 4) / 4`, and run the tool. Node.js 22.19.0 or newer is required
-by the current Inspector release. See the [MCP server guide](docs/mcp-server.md)
-for expected responses, errors, security boundaries, and an alternative
-prebuilt-binary command.
+In Inspector, open **Tools** and select `calculate` or `statistics`. The latter
+accepts `{"numbers":[12,15,9]}` and returns count, compensated sum, mean,
+median, sample standard deviation, minimum, and maximum. Node.js 22.19.0 or
+newer is required by the current Inspector release. See the
+[MCP server guide](docs/mcp-server.md) for the complete contracts, errors,
+security boundaries, and an alternative prebuilt-binary command.
 
 ## Use the library
 
@@ -108,5 +110,5 @@ Successful parsing proves neither mathematical intent nor research correctness.
 See the contract for the complete supported subset and recovery guidance.
 
 This repository was extracted from Remote Notes commit `1e299d2` on 2026-10-02.
-No project license has been declared yet; fend-core 1.5.8 declares MIT for its
-own code.
+No project license has been declared yet; fend-core 1.5.8 and statrs 0.19.1
+declare MIT for their own code.

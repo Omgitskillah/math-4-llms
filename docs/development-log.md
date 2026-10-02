@@ -88,3 +88,31 @@ its detailed experiment reports are retained beside this file.
 - `cargo test --locked --workspace --all-features`: all 14 tests passed.
 - `cargo fmt --all --check` and `cargo clippy --locked --workspace --all-targets
   --all-features -- -D warnings`: passed.
+
+## 2026-10-02 — Add descriptive statistics MCP tool
+
+- Added the `statistics` MCP tool with the strict input
+  `{"numbers":[...]}`. It returns count, compensated sum, mean, median, sample
+  standard deviation using `n-1`, minimum, and maximum in one versioned response.
+- Added statrs 0.19.1 behind the existing optional `mcp` feature with default
+  features disabled and only `std` enabled. `cargo tree --locked --features mcp
+  -e normal` confirmed that nalgebra and rand are not in the enabled dependency
+  graph.
+- Enforced 2 to 10,000 finite inputs and rejected empty, singleton, oversized,
+  non-finite-input, and non-finite-result cases with stable codes and hints.
+  Unknown fields and non-numeric elements fail parameter deserialization.
+- Added direct tests for ordering, duplicates, fractional and negative values,
+  compensated cancellation, every error class, and both dataset-size boundaries.
+  Extended the real stdio MCP process test to verify discovery and schemas, the
+  exact `[12, 15, 9]` response, an even-sized dataset, the 10,000-value limit,
+  every protocol-reachable error, JSON text fallback, and malformed arguments.
+- `cargo test --locked --workspace --all-features`: all 17 tests passed.
+- `cargo test --locked --workspace`: all 13 default-feature tests passed,
+  confirming that statrs remains absent from default library consumers.
+- `cargo fmt --all --check` and `cargo clippy --locked --workspace --all-targets
+  --all-features -- -D warnings`: passed.
+- `cargo +nightly llvm-cov --branch --locked --workspace --all-features --json
+  --output-path /tmp/math-statistics-coverage.json`: passed with 89.93% line and
+  94.44% branch coverage; `src/mcp.rs` measured 84.83% lines and 85.71% branches.
+- `cargo test --locked --manifest-path vault-access/Cargo.toml --workspace` from
+  the parent repository: all 48 tests passed.

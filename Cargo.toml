@@ -7,7 +7,7 @@ default-run = "math-tool"
 
 [features]
 default = []
-mcp = ["dep:rmcp", "dep:schemars", "dep:tokio"]
+mcp = ["dep:rmcp", "dep:schemars", "dep:statrs", "dep:tokio"]
 
 [dependencies]
 fend-core = "=1.5.8"
@@ -15,6 +15,7 @@ rmcp = { version = "=3.5.0", default-features = false, features = ["macros", "se
 schemars = { version = "=1.2.2", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+statrs = { version = "=0.19.1", default-features = false, features = ["std"], optional = true }
 thiserror = "2.0"
 tokio = { version = "1.48", features = ["macros", "rt-multi-thread"], optional = true }
 
