@@ -1,0 +1,12 @@
+[package]
+name = "math-4-llms"
+version = "0.1.0"
+edition = "2024"
+publish = false
+default-run = "math-tool"
+
+[dependencies]
+fend-core = "=1.5.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"

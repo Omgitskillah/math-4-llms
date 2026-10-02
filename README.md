@@ -1,0 +1,88 @@
+# math-4-llms
+
+`math-4-llms` is a small Rust library and CLI for evaluating one strict,
+real-valued mathematical expression. It wraps fend-core with bounded input,
+explicit syntax validation, and stable versioned JSON errors designed for
+callers that cannot safely interpret free-form calculator messages.
+
+The tool does not execute shell commands, read files, repair malformed input,
+or infer mathematical intent.
+
+## Use the CLI
+
+```sh
+cargo run --locked --bin math-tool -- '12 / sqrt(36)'
+```
+
+```json
+{"schema_version":1,"ok":true,"result":"2","approximate":false}
+```
+
+Invalid input returns the same envelope with `ok: false`, a stable error code,
+a plain-language message, a correction hint, and an optional UTF-8 byte offset.
+The process exits nonzero for errors.
+
+## Use the library
+
+```rust
+use math_4_llms::{evaluate, evaluate_response};
+
+assert_eq!(evaluate("2 + 3 * 4")?, "14");
+let response = evaluate_response("(2 + 3))");
+assert!(!response.ok);
+# Ok::<(), math_4_llms::MathError>(())
+```
+
+The public entry points are:
+
+- `evaluate(&str) -> Result<String, MathError>`
+- `evaluate_response(&str) -> MathResponse`
+- `ErrorCode`, `MathError`, and `MathResponse` for structured handling
+
+See the [v1 contract](docs/contract.md) for the accepted grammar, all error
+codes, precedence, resource limits, and model-caller guidance.
+
+## Test and inspect behavior
+
+```sh
+cargo test --locked --workspace
+cargo run --locked --example research_math
+cargo run --locked --example model_inputs
+cargo fmt --all --check
+cargo clippy --locked --workspace --all-targets -- -D warnings
+```
+
+The research corpus contains ten representative calculations. The model-input
+corpus contains 42 deliberately messy expressions, supplemented by generated
+whitespace, nesting, byte-boundary, timeout, CLI, and serialization tests.
+
+Coverage requires nightly Rust, `llvm-tools-preview`, and `cargo-llvm-cov`:
+
+```sh
+rustup toolchain install nightly --component llvm-tools-preview
+cargo install cargo-llvm-cov --locked
+cargo +nightly llvm-cov --branch --locked --workspace
+```
+
+GitHub Actions runs formatting, tests, Clippy, and coverage. It enforces at
+least 85% line coverage and branch coverage strictly above 80%, then uploads
+the text, JSON, and HTML reports.
+
+## Documentation
+
+- [Stable v1 contract](docs/contract.md)
+- [Research-engine comparison](docs/research-comparison.md)
+- [Historical permissive-input characterization](docs/model-input-robustness.md)
+- [Strict implementation rerun](docs/test-rerun-comparison.md)
+- [Development log](docs/development-log.md)
+
+## Limitations
+
+Evaluation has a 1024-byte input limit, nesting is capped at 32 levels, and the
+fend interrupt deadline is cooperative rather than a hard CPU or memory sandbox.
+Successful parsing proves neither mathematical intent nor research correctness.
+See the contract for the complete supported subset and recovery guidance.
+
+This repository was extracted from Remote Notes commit `1e299d2` on 2026-10-02.
+No project license has been declared yet; fend-core 1.5.8 declares MIT for its
+own code.

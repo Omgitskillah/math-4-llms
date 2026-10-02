@@ -1,0 +1,12 @@
+[
+  {"name":"Arithmetic mean", "expression":"(1 + 2 + 3 + 4) / 4", "expected":2.5},
+  {"name":"Sample variance", "expression":"((2 - 4)^2 + (4 - 4)^2 + (6 - 4)^2) / (3 - 1)", "expected":4.0},
+  {"name":"Standard error", "expression":"12 / sqrt(36)", "expected":2.0},
+  {"name":"95% normal CI upper bound", "expression":"100 + 1.96 * 15 / sqrt(25)", "expected":105.88},
+  {"name":"Exponential decay", "expression":"100 * exp(-0.2 * 5)", "expected":36.787944117144235},
+  {"name":"Half-life", "expression":"ln(2) / 0.1", "expected":6.931471805599453},
+  {"name":"pH from molar concentration", "expression":"-log10(0.00001)", "expected":5.0},
+  {"name":"Bayesian posterior probability", "expression":"(0.95 * 0.01) / (0.95 * 0.01 + 0.05 * 0.99)", "expected":0.16101694915254236},
+  {"name":"Weighted mean", "expression":"(10 * 2 + 20 * 3 + 30 * 5) / (2 + 3 + 5)", "expected":23.0},
+  {"name":"Euclidean distance", "expression":"sqrt((4 - 1)^2 + (6 - 2)^2)", "expected":5.0}
+]
