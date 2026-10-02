@@ -5,8 +5,25 @@ edition = "2024"
 publish = false
 default-run = "math-tool"
 
+[features]
+default = []
+mcp = ["dep:rmcp", "dep:schemars", "dep:tokio"]
+
 [dependencies]
 fend-core = "=1.5.8"
+rmcp = { version = "=3.5.0", default-features = false, features = ["macros", "server", "transport-io"], optional = true }
+schemars = { version = "=1.2.2", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "2.0"
+tokio = { version = "1.48", features = ["macros", "rt-multi-thread"], optional = true }
+
+[[bin]]
+name = "math-mcp"
+path = "src/bin/math-mcp.rs"
+required-features = ["mcp"]
+
+[[test]]
+name = "mcp_server"
+path = "tests/mcp_server.rs"
+required-features = ["mcp"]

@@ -25,9 +25,9 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all --check
       - name: Run tests
-        run: cargo test --locked --workspace
+        run: cargo test --locked --workspace --all-features
       - name: Run Clippy
-        run: cargo clippy --locked --workspace --all-targets -- -D warnings
+        run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
 
   coverage:
     name: Code coverage
@@ -45,7 +45,7 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Run instrumented tests
-        run: cargo +nightly llvm-cov --branch --locked --workspace --no-report
+        run: cargo +nightly llvm-cov --branch --locked --workspace --all-features --no-report
       - name: Generate coverage reports
         run: |
           cargo +nightly llvm-cov report --branch | tee coverage-summary.txt

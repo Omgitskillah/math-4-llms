@@ -22,6 +22,29 @@ Invalid input returns the same envelope with `ok: false`, a stable error code,
 a plain-language message, a correction hint, and an optional UTF-8 byte offset.
 The process exits nonzero for errors.
 
+## Use the MCP server
+
+The optional `mcp` feature provides a local stdio server with one tool,
+`calculate`. It publishes JSON input and output schemas and preserves the
+same versioned responses and stable calculation error codes as the library.
+
+```sh
+cargo run --locked --features mcp --bin math-mcp
+```
+
+The process speaks MCP over stdin/stdout, so launch it from an MCP client rather
+than typing into it interactively. To inspect it with the official MCP Inspector:
+
+```sh
+npx @modelcontextprotocol/inspector cargo run -- --locked --features mcp --bin math-mcp
+```
+
+In Inspector, open **Tools**, select `calculate`, enter an expression such
+as `(1 + 2 + 3 + 4) / 4`, and run the tool. Node.js 22.19.0 or newer is required
+by the current Inspector release. See the [MCP server guide](docs/mcp-server.md)
+for expected responses, errors, security boundaries, and an alternative
+prebuilt-binary command.
+
 ## Use the library
 
 ```rust
@@ -45,11 +68,11 @@ codes, precedence, resource limits, and model-caller guidance.
 ## Test and inspect behavior
 
 ```sh
-cargo test --locked --workspace
+cargo test --locked --workspace --all-features
 cargo run --locked --example research_math
 cargo run --locked --example model_inputs
 cargo fmt --all --check
-cargo clippy --locked --workspace --all-targets -- -D warnings
+cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
 ```
 
 The research corpus contains ten representative calculations. The model-input
@@ -61,7 +84,7 @@ Coverage requires nightly Rust, `llvm-tools-preview`, and `cargo-llvm-cov`:
 ```sh
 rustup toolchain install nightly --component llvm-tools-preview
 cargo install cargo-llvm-cov --locked
-cargo +nightly llvm-cov --branch --locked --workspace
+cargo +nightly llvm-cov --branch --locked --workspace --all-features
 ```
 
 GitHub Actions runs formatting, tests, Clippy, and coverage. It enforces at
@@ -71,6 +94,7 @@ the text, JSON, and HTML reports.
 ## Documentation
 
 - [Stable v1 contract](docs/contract.md)
+- [MCP server and Inspector guide](docs/mcp-server.md)
 - [Research-engine comparison](docs/research-comparison.md)
 - [Historical permissive-input characterization](docs/model-input-robustness.md)
 - [Strict implementation rerun](docs/test-rerun-comparison.md)

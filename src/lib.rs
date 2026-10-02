@@ -6,8 +6,11 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[cfg(feature = "mcp")]
+pub mod mcp;
 mod validation;
 
+#[cfg_attr(feature = "mcp", derive(schemars::JsonSchema))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ErrorCode {
@@ -28,12 +31,14 @@ pub enum ErrorCode {
     InvalidArguments,
 }
 
+#[cfg_attr(feature = "mcp", derive(schemars::JsonSchema))]
 #[derive(Debug, Serialize, thiserror::Error)]
 #[error("{message}")]
 pub struct MathError {
     pub code: ErrorCode,
     pub message: &'static str,
     pub hint: &'static str,
+    #[cfg_attr(feature = "mcp", schemars(schema_with = "mcp_schema::nullable_usize"))]
     pub position: Option<usize>,
 }
 
@@ -111,16 +116,45 @@ impl MathError {
     }
 }
 
+#[cfg_attr(feature = "mcp", derive(schemars::JsonSchema))]
 #[derive(Debug, Serialize)]
 pub struct MathResponse {
     pub schema_version: u8,
     pub ok: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "mcp", schemars(schema_with = "mcp_schema::nullable_string"))]
     pub result: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "mcp", schemars(schema_with = "mcp_schema::nullable_bool"))]
     pub approximate: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<MathError>,
+}
+
+#[cfg(feature = "mcp")]
+mod mcp_schema {
+    use schemars::{JsonSchema, Schema, SchemaGenerator, json_schema};
+
+    fn nullable<T: JsonSchema>(generator: &mut SchemaGenerator) -> Schema {
+        json_schema!({
+            "anyOf": [
+                generator.subschema_for::<T>(),
+                { "type": "null" }
+            ]
+        })
+    }
+
+    pub(super) fn nullable_string(generator: &mut SchemaGenerator) -> Schema {
+        nullable::<String>(generator)
+    }
+
+    pub(super) fn nullable_bool(generator: &mut SchemaGenerator) -> Schema {
+        nullable::<bool>(generator)
+    }
+
+    pub(super) fn nullable_usize(generator: &mut SchemaGenerator) -> Schema {
+        nullable::<usize>(generator)
+    }
 }
 
 impl MathResponse {

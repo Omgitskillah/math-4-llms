@@ -34,3 +34,57 @@ its detailed experiment reports are retained beside this file.
 - Clean verification passed all 13 tests plus formatting and Clippy. Coverage
   passed at 99.31% lines and 96.55% branches, exceeding the workflow's 85% line
   and strictly-above-80% branch gates.
+
+## 2026-10-02 — Add local MCP server
+
+- Added the feature-gated `math-mcp` stdio server using the official Rust MCP
+  SDK. Its sole `calculate_math` tool publishes input/output schemas and returns
+  the existing versioned `MathResponse`; invalid calculations are marked as MCP
+  tool errors while retaining their stable code, message, hint, and position.
+- Kept the `mcp` feature disabled by default so library consumers do not inherit
+  the MCP runtime. GitHub Actions now enables all features for tests, Clippy, and
+  coverage so the optional server cannot be skipped in CI.
+- Added an end-to-end process test that performs MCP initialization, lists the
+  tool and schemas, calls a successful calculation, checks a structured
+  `UNBALANCED_PARENTHESES` tool error, and verifies missing parameters fail
+  clearly. The test talks to the real binary over stdio.
+- Documented local use and the official MCP Inspector workflow. The server opens
+  no network listener and requires no token; Inspector starts it as a child
+  process under the current operating-system account.
+- `cargo test --locked --workspace --all-features`: passed 13 existing tests and
+  the new MCP integration test (14 total).
+- `cargo test --locked --workspace`: passed all 13 default-feature tests,
+  confirming the optional MCP feature is not required by library-only users.
+- `cargo clippy --locked --workspace --all-targets --all-features -- -D warnings`:
+  passed.
+- `cargo fmt --all --check`: initially identified one import-layout difference;
+  `cargo fmt --all` applied it, and the final formatting check passed.
+- `cargo +nightly llvm-cov --branch --locked --workspace --all-features --json
+  --output-path /tmp/math-mcp-coverage.json`: passed with 92.01% line, 84.00%
+  function, 91.69% region, and 93.33% branch coverage. The subprocess protocol
+  test is behaviorally exercised, although LLVM's per-file report does not
+  attribute the spawned binary's execution to `src/mcp.rs`.
+- `cargo test --locked --manifest-path vault-access/Cargo.toml --workspace` from
+  the parent Remote Notes repository: all 48 tests passed, confirming the
+  feature-gated dependency remains compatible with `vault-access`.
+
+## 2026-10-02 — Make nullable MCP output schemas portable
+
+- Replaced array-valued JSON Schema `type` declarations for `result`,
+  `approximate`, and `position` with explicit `anyOf` branches containing one
+  type each. Runtime response serialization and the v1 contract are unchanged.
+- Extended the stdio integration test to inspect the real `tools/list` output
+  and pin the portable nullable representation for all three reported fields.
+- `cargo test --locked --all-features --test mcp_server`: passed.
+- `cargo test --locked --workspace --all-features`: all 14 tests passed.
+- `cargo test --locked --workspace`: all 13 default-feature tests passed.
+- `cargo fmt --all --check` and `cargo clippy --locked --workspace --all-targets
+  --all-features -- -D warnings`: passed.
+
+## 2026-10-02 — Simplify the MCP tool name
+
+- Renamed the public MCP tool and its Rust handler from `calculate_math` to
+  `calculate`; the input and output contracts are unchanged.
+- `cargo test --locked --workspace --all-features`: all 14 tests passed.
+- `cargo fmt --all --check` and `cargo clippy --locked --workspace --all-targets
+  --all-features -- -D warnings`: passed.
