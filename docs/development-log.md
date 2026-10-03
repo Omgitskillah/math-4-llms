@@ -116,3 +116,11 @@ its detailed experiment reports are retained beside this file.
   94.44% branch coverage; `src/mcp.rs` measured 84.83% lines and 85.71% branches.
 - `cargo test --locked --manifest-path vault-access/Cargo.toml --workspace` from
   the parent repository: all 48 tests passed.
+
+## 2026-10-03 — Clarify statistics in README
+
+- Added a dedicated statistics section with the optional MCP feature, JSON input
+  example, 2–10,000 finite-value limits, returned metrics, sample standard
+  deviation denominator, example values, and rejected dataset cases.
+- Checked the documentation against `src/mcp.rs` and reviewed the diff.
+  `git diff --check` passed. Documentation only; no automated tests were rerun.

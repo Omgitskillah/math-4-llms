@@ -40,12 +40,28 @@ than typing into it interactively. To inspect it with the official MCP Inspector
 npx @modelcontextprotocol/inspector cargo run -- --locked --features mcp --bin math-mcp
 ```
 
-In Inspector, open **Tools** and select `calculate` or `statistics`. The latter
-accepts `{"numbers":[12,15,9]}` and returns count, compensated sum, mean,
-median, sample standard deviation, minimum, and maximum. Node.js 22.19.0 or
-newer is required by the current Inspector release. See the
+In Inspector, open **Tools** and select `calculate` or `statistics`.
+Node.js 22.19.0 or newer is required by the current Inspector release. See the
 [MCP server guide](docs/mcp-server.md) for the complete contracts, errors,
 security boundaries, and an alternative prebuilt-binary command.
+
+### Statistics tool
+
+The `statistics` MCP tool is available when the `mcp` feature is enabled. It
+accepts 2 to 10,000 finite numbers:
+
+```json
+{"numbers":[12,15,9]}
+```
+
+It returns count, compensated sum, mean, median, sample standard deviation
+(using the `n-1` denominator), minimum, and maximum. For this example, the count
+is 3, sum is 36, mean and median are 12, sample standard deviation is 3,
+minimum is 9, and maximum is 15.
+
+Empty or singleton datasets, oversized datasets, non-finite inputs, and
+non-finite computed results are rejected. Statistics is exposed through MCP;
+the `math-tool` CLI evaluates scalar expressions.
 
 ## Use the library
 
