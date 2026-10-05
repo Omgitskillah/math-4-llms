@@ -98,7 +98,7 @@ approximately 66.50346238130022, intercept 850.5278305332359, R²
 | `rmse` | sqrt(RSS / n). |
 | `residual_standard_error` | sqrt(RSS / (n − 2)); `null` for two points. |
 | `largest_residual` | Object with `x`, `y`, `predicted`, `residual` for the largest absolute residual. The first point wins ties. |
-| `residuals` | All residual objects in input order when n ≤ 100; omitted above 100. |
+| `residuals` | All residual objects in input order when n ≤ 25; omitted above 25. |
 | `reference` | Present only with `reference_line`; the same fields evaluated using the supplied slope and intercept, without a nested `reference`. |
 
 The fit uses centred two-pass sums with compensated summation, avoiding the

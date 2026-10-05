@@ -60,6 +60,9 @@ It returns count, compensated sum, mean, median, sample standard deviation
 is 3, sum is 36, mean and median are 12, sample standard deviation is 3,
 minimum is 9, and maximum is 15.
 
+Pass `x` values to fit a least-squares line and optionally `reference_line` to
+compare another line with the data; see the [Statistics contract](docs/mcp-server.md#statistics-contract).
+
 Empty or singleton datasets, oversized datasets, non-finite inputs, and
 non-finite computed results are rejected. Statistics is exposed through MCP;
 the `math-tool` CLI evaluates scalar expressions.

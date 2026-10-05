@@ -71,7 +71,7 @@ pub struct LineStatistics {
     pub residual_standard_error: Option<f64>,
     /// Point with largest absolute residual; the first point wins ties.
     pub largest_residual: LineResidual,
-    /// Residuals in input order, omitted above 100 points.
+    /// Residuals in input order, omitted above 25 points.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub residuals: Option<Vec<LineResidual>>,
 }
@@ -352,7 +352,7 @@ fn line_statistics(
         rmse,
         residual_standard_error,
         largest_residual,
-        residuals: (x.len() <= 100).then_some(residuals),
+        residuals: (x.len() <= 25).then_some(residuals),
     })
 }
 
@@ -589,7 +589,7 @@ mod tests {
 
     #[test]
     fn residual_output_is_bounded_for_fit_and_reference() {
-        for n in [100, 101, 10_000] {
+        for n in [25, 26, 100, 101, 10_000] {
             let x: Vec<_> = (0..n).map(f64::from).collect();
             let result = super::summarize_statistics(fit_request(
                 x.clone(),
@@ -601,9 +601,14 @@ mod tests {
             ))
             .unwrap();
             let value = serde_json::to_value(result).unwrap();
+            assert_eq!(value["linear_fit"]["largest_residual"]["x"], 0.0);
+            assert_eq!(
+                value["linear_fit"]["reference"]["largest_residual"]["x"],
+                f64::from(n - 1)
+            );
             for stats in [&value["linear_fit"], &value["linear_fit"]["reference"]] {
                 assert!(stats["largest_residual"].is_object());
-                if n <= 100 {
+                if n <= 25 {
                     assert_eq!(stats["residuals"].as_array().unwrap().len(), n as usize);
                 } else {
                     assert!(stats.get("residuals").is_none());

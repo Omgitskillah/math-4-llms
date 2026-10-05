@@ -142,3 +142,14 @@ its detailed experiment reports are retained beside this file.
 - Reviewed source, schema assertions, documentation and diff; `git diff --check` passed. Final review added literal output field schema descriptions and wrapped the README paragraph; the required checks are repeated below for the final source.
 
 - Final source: repeated `cargo test --locked --workspace --all-features` (23 tests passed), `cargo fmt --all --check`, and `cargo clippy --locked --workspace --all-targets --all-features -- -D warnings`; all passed. Final diff whitespace check passed.
+
+## 2026-10-05 — Limit line residual output to 25 points
+
+- Lowered the residual-list threshold from 100 to 25 points for fitted and reference lines to reduce model context use; largest-residual reporting remains available for all accepted dataset sizes.
+- Updated the boundary test to cover 25, 26, 100, 101 and 10,000 points and verify the largest residual's identity even when the list is omitted. Updated the output schema comment, contract table, and README statistics section.
+- Kept the mean handling, allocation strategy, and overlapping constant-x checks unchanged. Verification follows below.
+
+- `cargo test --locked --workspace --all-features`: all 23 tests passed, including residual omission at 26 points for both lines and preservation of largest-residual reporting through 10,000 points.
+- `cargo fmt --all --check`: passed.
+- `cargo clippy --locked --workspace --all-targets --all-features -- -D warnings`: passed.
+- Reviewed the focused diff; `git diff --check` passed.
