@@ -124,3 +124,32 @@ its detailed experiment reports are retained beside this file.
   deviation denominator, example values, and rejected dataset cases.
 - Checked the documentation against `src/mcp.rs` and reviewed the diff.
   `git diff --check` passed. Documentation only; no automated tests were rerun.
+
+## 2026-10-05 — Statistics straight-line fit implementation
+
+- Added optional x values and a strict reference line request, centred two-pass compensated least squares, finite-result checks, bounded residual output and additive v1 output schemas. Existing numbers-only computation and serialization order are preserved.
+- Reference reporting includes residual standard error, following the contract's same-quantities rule. Constant y values retain an exact horizontal fit even if computing the mean introduces rounding.
+- Added unit regressions for sensor data, exact lines, two points, constant y, timestamp precision, output limits, validation precedence, overflow, strict fields, and byte-for-byte legacy serialization. Verification follows below.
+
+- Added stdio regressions for the optional input fields and output definitions, real sensor fit/reference reporting, and LENGTH_MISMATCH. Updated the README tool summary and Statistics contract with fields, metrics, limits, examples, and ordered errors.
+
+### Verification
+
+- `cargo test --locked --all-features mcp::tests`: passed all 7 statistics unit tests.
+- `cargo test --locked --workspace --all-features`: passed 8 library unit tests, 5 math integration tests, 3 stdio MCP integration tests, 7 model-input tests, and doc tests.
+- `cargo fmt --all --check`: passed.
+- `cargo clippy --locked --workspace --all-targets --all-features -- -D warnings`: passed.
+- Reviewed source, schema assertions, documentation and diff; `git diff --check` passed. Final review added literal output field schema descriptions and wrapped the README paragraph; the required checks are repeated below for the final source.
+
+- Final source: repeated `cargo test --locked --workspace --all-features` (23 tests passed), `cargo fmt --all --check`, and `cargo clippy --locked --workspace --all-targets --all-features -- -D warnings`; all passed. Final diff whitespace check passed.
+
+## 2026-10-05 — Limit line residual output to 25 points
+
+- Lowered the residual-list threshold from 100 to 25 points for fitted and reference lines to reduce model context use; largest-residual reporting remains available for all accepted dataset sizes.
+- Updated the boundary test to cover 25, 26, 100, 101 and 10,000 points and verify the largest residual's identity even when the list is omitted. Updated the output schema comment, contract table, and README statistics section.
+- Kept the mean handling, allocation strategy, and overlapping constant-x checks unchanged. Verification follows below.
+
+- `cargo test --locked --workspace --all-features`: all 23 tests passed, including residual omission at 26 points for both lines and preservation of largest-residual reporting through 10,000 points.
+- `cargo fmt --all --check`: passed.
+- `cargo clippy --locked --workspace --all-targets --all-features -- -D warnings`: passed.
+- Reviewed the focused diff; `git diff --check` passed.

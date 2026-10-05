@@ -197,6 +197,32 @@ fn stdio_statistics_tool_validates_and_summarizes_datasets() {
         "number"
     );
 
+    assert!(statistics["inputSchema"]["properties"].get("x").is_some());
+    assert!(
+        statistics["inputSchema"]["properties"]
+            .get("reference_line")
+            .is_some()
+    );
+    assert_eq!(
+        statistics["inputSchema"]["$defs"]["ReferenceLine"]["additionalProperties"],
+        false
+    );
+    assert!(
+        statistics["outputSchema"]["properties"]
+            .get("linear_fit")
+            .is_some()
+    );
+    assert!(
+        statistics["outputSchema"]["$defs"]
+            .get("LinearFit")
+            .is_some()
+    );
+    assert!(
+        statistics["outputSchema"]["$defs"]
+            .get("LineStatistics")
+            .is_some()
+    );
+
     let basic = server.request(json!({
         "jsonrpc": "2.0",
         "id": 21,
@@ -306,4 +332,47 @@ fn stdio_statistics_tool_validates_and_summarizes_datasets() {
             "{malformed:#}"
         );
     }
+}
+
+#[test]
+fn stdio_statistics_fits_sensor_data_and_rejects_length_mismatch() {
+    let mut server = McpProcess::start();
+    initialize(&mut server);
+    let response = server.request(json!({
+        "jsonrpc": "2.0", "id": 40, "method": "tools/call",
+        "params": {"name": "statistics", "arguments": {
+            "numbers": [812, 1490, 2510, 4205, 7588, 14102],
+            "x": [0, 10, 25, 50, 100, 200],
+            "reference_line": {"slope": 69.2, "intercept": 900}
+        }}
+    }));
+    assert_ne!(response["result"]["isError"], true);
+    let fit = &response["result"]["structuredContent"]["linear_fit"];
+    assert_number_close(&fit["slope"], 66.50346238130022);
+    assert_number_close(&fit["intercept"], 850.5278305332359);
+    assert_number_close(&fit["r_squared"], 0.999896795208191);
+    assert_number_close(&fit["residual_sum_of_squares"], 13019.53308984659);
+    assert_eq!(fit["largest_residual"]["x"], 100.0);
+    assert_eq!(fit["residuals"].as_array().unwrap().len(), 6);
+    assert_number_close(&fit["reference"]["residual_sum_of_squares"], 517441.0);
+    assert_number_close(&fit["reference"]["r_squared"], 0.9958982868041496);
+    assert_eq!(fit["reference"]["largest_residual"]["x"], 200.0);
+    assert_number_close(&fit["reference"]["largest_residual"]["residual"], -638.0);
+    let fallback: Value =
+        serde_json::from_str(response["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    assert_eq!(fallback, response["result"]["structuredContent"]);
+
+    let error = server.request(json!({
+        "jsonrpc": "2.0", "id": 41, "method": "tools/call",
+        "params": {"name": "statistics", "arguments": {"numbers": [1, 2], "x": [0]}}
+    }));
+    assert_eq!(error["result"]["isError"], true);
+    assert_eq!(
+        error["result"]["structuredContent"]["code"],
+        "LENGTH_MISMATCH"
+    );
+    assert_eq!(
+        error["result"]["structuredContent"]["hint"],
+        "Give exactly one x value for each y value, in the same order."
+    );
 }
