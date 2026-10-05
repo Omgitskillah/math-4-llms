@@ -124,3 +124,21 @@ its detailed experiment reports are retained beside this file.
   deviation denominator, example values, and rejected dataset cases.
 - Checked the documentation against `src/mcp.rs` and reviewed the diff.
   `git diff --check` passed. Documentation only; no automated tests were rerun.
+
+## 2026-10-05 — Statistics straight-line fit implementation
+
+- Added optional x values and a strict reference line request, centred two-pass compensated least squares, finite-result checks, bounded residual output and additive v1 output schemas. Existing numbers-only computation and serialization order are preserved.
+- Reference reporting includes residual standard error, following the contract's same-quantities rule. Constant y values retain an exact horizontal fit even if computing the mean introduces rounding.
+- Added unit regressions for sensor data, exact lines, two points, constant y, timestamp precision, output limits, validation precedence, overflow, strict fields, and byte-for-byte legacy serialization. Verification follows below.
+
+- Added stdio regressions for the optional input fields and output definitions, real sensor fit/reference reporting, and LENGTH_MISMATCH. Updated the README tool summary and Statistics contract with fields, metrics, limits, examples, and ordered errors.
+
+### Verification
+
+- `cargo test --locked --all-features mcp::tests`: passed all 7 statistics unit tests.
+- `cargo test --locked --workspace --all-features`: passed 8 library unit tests, 5 math integration tests, 3 stdio MCP integration tests, 7 model-input tests, and doc tests.
+- `cargo fmt --all --check`: passed.
+- `cargo clippy --locked --workspace --all-targets --all-features -- -D warnings`: passed.
+- Reviewed source, schema assertions, documentation and diff; `git diff --check` passed. Final review added literal output field schema descriptions and wrapped the README paragraph; the required checks are repeated below for the final source.
+
+- Final source: repeated `cargo test --locked --workspace --all-features` (23 tests passed), `cargo fmt --all --check`, and `cargo clippy --locked --workspace --all-targets --all-features -- -D warnings`; all passed. Final diff whitespace check passed.

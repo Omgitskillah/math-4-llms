@@ -26,8 +26,9 @@ The process exits nonzero for errors.
 
 The optional `mcp` feature provides a local stdio server with two tools:
 `calculate` evaluates strict scalar expressions, while `statistics` summarizes
-numeric datasets. Both publish JSON input and output schemas and return
-versioned structured responses.
+numeric datasets and optionally fits a least-squares line and compares a reference
+line. Both publish JSON input and output schemas and return versioned structured
+responses.
 
 ```sh
 cargo run --locked --features mcp --bin math-mcp

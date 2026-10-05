@@ -65,10 +65,66 @@ Successful structured output:
 ```
 
 The standard deviation is the sample statistic with Bessel's `n-1` correction.
-The tool accepts 2 to 10,000 finite JSON numbers. It uses a compensated sum and
-rejects empty or singleton datasets, larger datasets, non-finite inputs, and
-non-finite results with stable error codes and correction hints. Unknown input
-fields and non-numeric array elements are rejected as MCP parameter errors.
+All existing summary fields describe `numbers`; calls with only `numbers` return
+exactly the output above, without a `linear_fit` key. `schema_version` remains 1.
+
+| Input field | Contract |
+| --- | --- |
+| `numbers` | Required, 2 to 10,000 finite numbers; y values when `x` is supplied. |
+| `x` | Optional finite x values, one for each y value in the same order; requests a fit. |
+| `reference_line` | Optional object with finite `slope` and `intercept`; requires `x`. |
+
+For example, fit sensor readings and compare an eyeballed line with one call:
+
+```json
+{
+  "numbers": [812, 1490, 2510, 4205, 7588, 14102],
+  "x": [0, 10, 25, 50, 100, 200],
+  "reference_line": {"slope": 69.2, "intercept": 900}
+}
+```
+
+The response includes the usual summary and a `linear_fit` object. Its slope is
+approximately 66.50346238130022, intercept 850.5278305332359, R²
+0.999896795208191, and RSS 13019.53308984659. The largest residual is at x = 100
+(approximately +87.13). The reference line's RSS is 517441.0 and R² is
+0.9958982868041496; its largest residual is at x = 200 (−638).
+
+| `linear_fit` field | Meaning |
+| --- | --- |
+| `slope`, `intercept` | Ordinary least-squares line of y on x. |
+| `residual_sum_of_squares` | RSS = sum of squared residuals, where residual = y − predicted. |
+| `r_squared` | 1 − RSS / sum((y − mean(y))²); `null` when all y values are equal. |
+| `rmse` | sqrt(RSS / n). |
+| `residual_standard_error` | sqrt(RSS / (n − 2)); `null` for two points. |
+| `largest_residual` | Object with `x`, `y`, `predicted`, `residual` for the largest absolute residual. The first point wins ties. |
+| `residuals` | All residual objects in input order when n ≤ 100; omitted above 100. |
+| `reference` | Present only with `reference_line`; the same fields evaluated using the supplied slope and intercept, without a nested `reference`. |
+
+The fit uses centred two-pass sums with compensated summation, avoiding the
+single-pass subtraction that loses precision for large x offsets such as
+timestamps. Predictions use slope × x + intercept. All numeric results are
+full-precision `f64` values, without rounding. Reference R² can be negative.
+`largest_residual` is always present, even when `residuals` is omitted. Reference
+statistics follow the same null and residual-size rules as the fit.
+
+Validation runs in the following order before computing statistics (Sxx is
+checked during the centred computation as well):
+
+| Condition | Error code | Correction hint |
+| --- | --- | --- |
+| Empty `numbers` | `EMPTY_DATASET` | Provide at least two finite numbers for sample statistics. |
+| One y value | `SAMPLE_TOO_SMALL` | Add another finite observation or do not request sample statistics. |
+| More than 10,000 y values | `TOO_MANY_VALUES` | Split or summarize the dataset before calling this tool. |
+| NaN or infinity in `numbers`, `x`, or reference coefficients | `NON_FINITE_INPUT` | Remove NaN and positive or negative infinity values. |
+| Different x and y lengths | `LENGTH_MISMATCH` | Give exactly one x value for each y value, in the same order. |
+| All x values equal (Sxx = 0) | `CONSTANT_X` | A line needs at least two different x values. |
+| Reference line without x | `REFERENCE_WITHOUT_X` | Pass x values with the reference line, or omit it. |
+| Any non-finite computed value | `NON_FINITE_RESULT` | Reduce the magnitude of the values or rescale the dataset. |
+
+These errors return `schema_version: 1`, `ok: false`, `code`, a plain-language
+`message`, and the correction `hint`, with MCP `isError: true`. Unknown fields
+in the request or reference line and non-numeric values are MCP parameter errors.
 
 ## Test with MCP Inspector
 
