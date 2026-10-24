@@ -7,7 +7,7 @@ on:
   push:
     tags: ['v*']
   pull_request:
-    paths: ['.github/workflows/release.yml', '.github/scripts/smoke_mcp.py', 'Cargo.toml', 'Cargo.lock']
+    paths: ['.github/workflows/release.yml', '.github/scripts/smoke_mcp.py', 'Cargo.toml', 'Cargo.lock', '.cargo/config.toml']
 
 concurrency:
   group: release-${{ github.ref }}
@@ -40,6 +40,13 @@ jobs:
         run: cargo build --release --locked --features mcp --bin math-mcp --target ${{ matrix.target }}
       - name: Name it for its system
         run: cp "target/${{ matrix.target }}/release/math-mcp${{ matrix.exe }}" "math-mcp-${{ matrix.target }}${{ matrix.exe }}"
+      - name: Needs no Visual C++ runtime
+        if: matrix.os == 'windows-latest'
+        run: |
+          if grep -aqi 'vcruntime140' "math-mcp-${{ matrix.target }}${{ matrix.exe }}"; then
+            echo "::error::math-mcp.exe still needs VCRUNTIME140.dll; .cargo/config.toml should link it statically"
+            exit 1
+          fi
       # It starts and answers an MCP initialize, with the tag's version on a release. The Intel macOS build
       # runs through Rosetta on the Apple-silicon runner, when the runner has it.
       - name: Start it

@@ -1,0 +1,4 @@
+# The Visual C++ runtime goes inside math-mcp.exe, so it starts on a Windows computer that has never
+# installed Microsoft's runtime (vcruntime140.dll). The rest of the C runtime is part of Windows 10 and 11.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
