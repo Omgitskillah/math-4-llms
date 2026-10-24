@@ -1,10 +1,17 @@
 name: Release
 
-# A version tag (v0.1.0) builds math-mcp for the systems Nuru ships on and publishes it as a release, so
-# Nuru's installer downloads it instead of building it with Rust on the user's computer.
+# A version tag (v1.0.0) builds math-mcp for the systems Nuru ships on and publishes it as a release, so
+# Nuru's installer downloads it instead of building it with Rust on the user's computer. A pull request
+# that changes how it's built or packaged does everything but publish.
 on:
   push:
     tags: ['v*']
+  pull_request:
+    paths: ['.github/workflows/release.yml', '.github/scripts/smoke_mcp.py', 'Cargo.toml', 'Cargo.lock']
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -33,6 +40,18 @@ jobs:
         run: cargo build --release --locked --features mcp --bin math-mcp --target ${{ matrix.target }}
       - name: Name it for its system
         run: cp "target/${{ matrix.target }}/release/math-mcp${{ matrix.exe }}" "math-mcp-${{ matrix.target }}${{ matrix.exe }}"
+      # It starts and answers an MCP initialize, with the tag's version on a release. The Intel macOS build
+      # runs through Rosetta on the Apple-silicon runner, when the runner has it.
+      - name: Start it
+        run: |
+          binary="./math-mcp-${{ matrix.target }}${{ matrix.exe }}"
+          version="${GITHUB_REF_NAME#v}"
+          [[ "$GITHUB_REF" == refs/tags/v* ]] || version=""
+          if [[ "${{ matrix.target }}" == x86_64-apple-darwin ]] && ! arch -x86_64 /usr/bin/true 2>/dev/null; then
+            echo "::notice::no Rosetta on this runner: the Intel build was built but not started"
+            exit 0
+          fi
+          ${{ runner.os == 'Windows' && 'python' || 'python3' }} .github/scripts/smoke_mcp.py "$binary" $version
       - uses: actions/upload-artifact@v7
         with:
           name: math-mcp-${{ matrix.target }}
@@ -50,9 +69,14 @@ jobs:
       - uses: actions/download-artifact@v7
         with:
           merge-multiple: true
-      - name: Checksums
-        run: sha256sum math-mcp-* | tee SHA256SUMS
+      - name: All three, and their checksums
+        run: |
+          ls math-mcp-* | sort > names
+          printf '%s\n' math-mcp-aarch64-apple-darwin math-mcp-x86_64-apple-darwin math-mcp-x86_64-pc-windows-msvc.exe | diff - names
+          sha256sum math-mcp-* | tee SHA256SUMS
+          sha256sum --check SHA256SUMS
       - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" math-mcp-* SHA256SUMS --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes "math-mcp $GITHUB_REF_NAME for Windows (x64) and macOS (Apple silicon, Intel). Check a download against SHA256SUMS."
