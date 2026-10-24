@@ -1,0 +1,58 @@
+name: Release
+
+# A version tag (v0.1.0) builds math-mcp for the systems Nuru ships on and publishes it as a release, so
+# Nuru's installer downloads it instead of building it with Rust on the user's computer.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - { os: windows-latest, target: x86_64-pc-windows-msvc, exe: .exe }
+          - { os: macos-latest, target: aarch64-apple-darwin, exe: '' }
+          - { os: macos-latest, target: x86_64-apple-darwin, exe: '' }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Build
+        run: cargo build --release --locked --features mcp --bin math-mcp --target ${{ matrix.target }}
+      - name: Name it for its system
+        run: cp "target/${{ matrix.target }}/release/math-mcp${{ matrix.exe }}" "math-mcp-${{ matrix.target }}${{ matrix.exe }}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: math-mcp-${{ matrix.target }}
+          path: math-mcp-${{ matrix.target }}${{ matrix.exe }}
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          merge-multiple: true
+      - name: Checksums
+        run: sha256sum math-mcp-* | tee SHA256SUMS
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" math-mcp-* SHA256SUMS --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes "math-mcp $GITHUB_REF_NAME for Windows (x64) and macOS (Apple silicon, Intel). Check a download against SHA256SUMS."
